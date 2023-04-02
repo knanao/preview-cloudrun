@@ -35,11 +35,11 @@
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.57.0",
     "@typescript-eslint/parser": "^5.57.0",
+    "@vercel/ncc": "^0.36.1",
     "chai": "^4.3.7",
     "eslint": "^8.37.0",
     "jest": "^29.5.0",
     "mocha": "^10.2.0",
-    "ncc": "^0.3.6",
     "npm": "^9.6.2",
     "ts-jest": "^29.0.5"
   }

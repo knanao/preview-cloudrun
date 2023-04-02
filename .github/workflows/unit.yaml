@@ -1,4 +1,4 @@
-name: build
+name: unit
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  unit:
     strategy:
       fail-fast: false
       matrix:
@@ -25,4 +25,12 @@ jobs:
         with:
           node-version: 16.x
 
-      - run: npm ci && npm run build
+      - name: Run build
+        run: npm ci && npm run build
+
+      - name: Run lint
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: npm run lint
+
+      - name: Run test
+        run: npm run test
