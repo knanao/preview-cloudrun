@@ -15,7 +15,8 @@
 */
 
 import {
-  Gcloud
+  Gcloud,
+  GcloudOptions,
 } from './gcloud';
 import path from 'path';
 import {
@@ -35,7 +36,6 @@ import {
 import {
   authenticateGcloudSDK,
   getLatestGcloudSDKVersion,
-  getToolCommand,
   installGcloudSDK,
   isInstalled,
 } from '@google-github-actions/setup-cloud-sdk';
@@ -52,15 +52,9 @@ export async function run(): Promise<void> {
     const token = getInput('token');
     const gcloudVersion = await computeGcloudVersion(getInput('gcloud_version'));
 
-    if (!service) {
-      throw new Error('service name must be set.');
-    }
-    if (!image) {
-      throw new Error('container image must be set.');
-    }
-    if (!token) {
-      throw new Error('github token muset be set.');
-    }
+    if (!service) throw new Error('service name must be set.');
+    if (!image) throw new Error('container image must be set.');
+    if (!token) throw new Error('github token muset be set.');
 
     if (!isInstalled(gcloudVersion)) {
       await installGcloudSDK(gcloudVersion);
@@ -77,9 +71,9 @@ export async function run(): Promise<void> {
       warning('No authentication found, authenticate with `google-github-actions/auth`.');
     }
 
-    const cmd = getToolCommand();
-    const gcloud = new Gcloud(cmd);
-    if (project) gcloud.projectId = project;
+    const opts: GcloudOptions = {}
+    if (project) opts.projectId = project;
+    const gcloud = new Gcloud(opts);
 
     const manifest = await gcloud.getCloudRunServiceManifest(service, region);
     if (manifest) {
@@ -107,7 +101,7 @@ async function generateTrafficTag(): Promise<string> {
   const path = process.env.GITHUB_EVENT_PATH;
   const payload = JSON.parse(readFileSync(path).toString());
   if (!(payload?.pull_request)) {
-    throw new Error("failed to parse GitHub Event payload.")
+    throw new Error("failed to parse GitHub Event payload.");
   }
   return "pr" + payload.pull_request.number
 }
@@ -120,6 +114,4 @@ async function computeGcloudVersion(str: string): Promise<string> {
   return str;
 }
 
-if (require.main === module) {
-  run();
-}
+if (require.main === module) run();

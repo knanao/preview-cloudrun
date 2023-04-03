@@ -28,7 +28,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, env.TRIGGER_LABEL) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0

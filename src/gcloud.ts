@@ -21,17 +21,21 @@ import {
   parseServiceManifest,
 } from './cloudrun';
 import { getExecOutput } from '@actions/exec';
+import { getToolCommand } from '@google-github-actions/setup-cloud-sdk';
+
+export interface GcloudOptions {
+  projectId?: string;
+}
 
 export class Gcloud {
   private toolCommand: string;
-  private _projectId: string;
+  private projectId: string;
 
-  constructor(toolCommand: string) {
-    this.toolCommand = toolCommand;
-  }
-
-  set projectId(id: string) {
-    this.projectId = id;
+  constructor(options: GcloudOptions = {}) {
+    if (options.projectId) {
+      this.projectId = options.projectId;
+    }
+    this.toolCommand = getToolCommand();
   }
 
   public async getCloudRunServiceManifest(service: string, region: string): Promise<ServiceManifest> {

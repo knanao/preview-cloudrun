@@ -63,9 +63,9 @@ inputs:
     required: true
 
 branding:
-  icon: 'chevrons-right'
-  color: 'blue'
+  icon: chevrons-right
+  color: blue
 
 runs:
-  using: 'node16'
-  main: 'dist/main/index.js'
+  using: node16
+  main: dist/index.js
