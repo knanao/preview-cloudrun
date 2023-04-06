@@ -67,10 +67,9 @@ spec:
 `;
     const res = parseServiceManifest(data); 
 
-    expect(res.object.apiVersion).to.equal('serving.knative.dev/v1');
-    expect(res.object.metadata.name).to.equal('helloworld');
-    expect(res.object.spec.template.metadata.name).to.equal('helloworld-v001-aa3e4b2');
-    expect(res.object.spec.template.spec.containers[0].image).to.equal('gcr.io/cloudrun/hello:latest');
+    expect(res.getAPIVersion()).to.equal('serving.knative.dev/v1');
+    expect(res.getServiceName()).to.equal('helloworld');
+    expect(res.getImage()).to.equal('gcr.io/cloudrun/hello:latest');
 
   });
   it('should add preview safely', () => {
@@ -116,20 +115,70 @@ spec:
   traffic:
   - percent: 100
     revisionName: helloworld-v001-aa3e4b2
+status:
+  observedGeneration: 154
+  conditions:
+  - type: Ready
+    status: 'True'
+    lastTransitionTime: '2023-04-03T06:14:46.897608Z'
+  - type: ConfigurationsReady
+    status: 'True'
+    lastTransitionTime: '2023-03-27T16:12:07.472780Z'
+  - type: RoutesReady
+    status: 'True'
+    lastTransitionTime: '2023-04-03T06:14:47.045895Z'
+  latestReadyRevisionName: helloworld-v001-aa3e4b2
+  latestCreatedRevisionName: helloworld-v001-aa3e4b2
+  traffic:
+  - revisionName: helloworld-v001-aa3e4b2
+    percent: 100
+  - revisionName: helloworld-v001-bbhf45qc
+    tag: pr-1
+    url: https://pr-1---helloworld-amwk6cvjiq-an.a.run.app
+  url: https://helloworld-amwk6cvjiq-an.a.run.app
+  address:
+    url: helloworld-amwk6cvjiq-an.a.run.app
 `;
     const svm = parseServiceManifest(data); 
-    svm.addPreviewTraffic('helloworld-v001-bbhf45q', 'pr-1');
-
-    const expected = [
-      { 
-        'percent': 100,
+    // add the new tag.
+    svm.updatePreviewTraffic('helloworld-v001-bbhf45q', 'pr-1');
+    expect(svm.object?.spec?.traffic).to.deep.equal([
+      {
+	'percent': 100,
 	'revisionName': 'helloworld-v001-aa3e4b2',
       },
       {
 	'revisionName': 'helloworld-v001-bbhf45q',
 	'tag': 'pr-1',
       },
-    ];
-    expect(svm.object.spec.traffic).to.deep.equal(expected);
+    ]);
+
+    // replace the old revision's tag with the new revision's.
+    svm.updatePreviewTraffic('helloworld-v001-kfdacf3', 'pr-1');
+    expect(svm.object?.spec?.traffic).to.deep.equal([
+      {
+        "percent": 100,
+        "revisionName": "helloworld-v001-aa3e4b2",
+      },
+      {
+        "revisionName": "helloworld-v001-bbhf45q",
+      },
+      {
+        "revisionName": "helloworld-v001-kfdacf3",
+        "tag": "pr-1",
+      },
+    ]);
+
+    expect(svm.getTraffic()).to.deep.equal([
+      {
+        percent: 100,
+	revisionName: 'helloworld-v001-aa3e4b2',
+      },
+      {
+	revisionName: 'helloworld-v001-bbhf45qc',
+	tag: 'pr-1',
+	url: 'https://pr-1---helloworld-amwk6cvjiq-an.a.run.app',
+      },
+    ]);
   });
 });

@@ -39,7 +39,7 @@ export class Gcloud {
   }
 
   public async getCloudRunServiceManifest(service: string, region: string): Promise<ServiceManifest> {
-    const cmd = ['run', 'services', 'describe', service];
+    const cmd = ['run', 'services', 'describe', service, '--quiet'];
     cmd.push('--region', region);
     cmd.push('--format', 'yaml');
     if (this.projectId) cmd.push('--project', this.projectId);
@@ -53,9 +53,10 @@ export class Gcloud {
     return parseServiceManifest(output.stdout);
   }
 
-  public async updateCloudRunService(manifest: ServiceManifest): Promise<void> {
+  public async updateCloudRunService(manifest: ServiceManifest): Promise<ServiceManifest> {
     const file = 'temp/service.yaml'
-    const cmd = ['run', 'services', 'replace', file];
+    const cmd = ['run', 'services', 'replace', file, '--quiet'];
+    cmd.push('--format', 'yaml');
     if (this.projectId) cmd.push('--project', this.projectId);
 
     fs.writeFileSync(file, manifest.object);
@@ -65,6 +66,12 @@ export class Gcloud {
         const errMsg = output.stderr || `command exited ${output.exitCode}, but stderr had no output`;
         throw new Error(`failed to execute gcloud command \`${this.toolCommand} ${cmd.join(' ')}\`: ${errMsg}`);
       }
+
+      // Trim unnecessary output from the stdout.
+      // FIXME: this should not depend on the output format.
+      let stdout = output.stdout;
+      stdout = stdout.slice(stdout.indexOf("apiVersion"));
+      return parseServiceManifest(stdout);
     } finally {
       fs.unlinkSync(file);
     }
