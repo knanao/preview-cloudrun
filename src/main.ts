@@ -56,7 +56,7 @@ export async function run(): Promise<void> {
     const cleanup = (getInput('cleanup') || 'true').toLowerCase() === 'true';
     const token = getInput('token');
     const gcloudVersion = await computeGcloudVersion(getInput('gcloud_version'));
-
+    
     if (!service) throw new Error('service name must be set.');
     if (!image) throw new Error('container image must be set.');
     if (!token) throw new Error('github token muset be set.');
@@ -64,7 +64,7 @@ export async function run(): Promise<void> {
     if (context.eventName !== 'pull_request') {
       throw new Error(`event ${context.eventName} is not supported.`);
     }
-
+     
     if (!isInstalled(gcloudVersion)) {
       await installGcloudSDK(gcloudVersion);
     } else {
@@ -214,4 +214,4 @@ async function computeGcloudVersion(str: string): Promise<string> {
   return str;
 }
 
-if (require.main === module) run();
+run();
