@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-import fs from "fs";
+import fs from 'fs';
 
 import {
   ServiceManifest,
@@ -70,7 +70,7 @@ export class Gcloud {
       // Trim unnecessary output from the stdout.
       // FIXME: this should not depend on the output format.
       let stdout = output.stdout;
-      stdout = stdout.slice(stdout.indexOf("apiVersion"));
+      stdout = stdout.slice(stdout.indexOf('apiVersion'));
       return parseServiceManifest(stdout);
     } finally {
       fs.unlinkSync(file);

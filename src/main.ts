@@ -91,6 +91,7 @@ export async function run(): Promise<void> {
       throw new Error(`failed to get the Cloud Run service: ${service}.`);
     }
     manifest.updatePreviewTraffic(revision, tag);
+    manifest.updateRevisionName(revision);
 
     const updatedManifest = await gcloud.updateCloudRunService(manifest);
     const traffics = updatedManifest.getTraffic();
@@ -144,8 +145,10 @@ export async function run(): Promise<void> {
 }
 
 function generateRevisionName(svc: string, image: string): string {
-  const version = image.slice(image.indexOf(':')+1);
-  return svc + version.replace('.', '');
+  const event = context.payload as PullRequestEvent;
+  let version = '';
+  if (image.includes(':')) version = image.slice(image.indexOf(':') + 1).split('.').join('');
+  return svc + '-' + version + '-' + event.pull_request.head.sha;
 }
 
 function generateTrafficTag(): string {

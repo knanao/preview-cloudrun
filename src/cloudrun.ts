@@ -57,7 +57,7 @@ export class ServiceManifest {
 
   public updatePreviewTraffic(revision: string, tag: string): void {
     if (!this._object?.spec?.traffic) {
-      throw new Error("failed to get the .spec.traffic field.");
+      throw new Error('failed to get the .spec.traffic field.');
     }
 
     const traffic: Array<TrafficTarget> = this._object.spec.traffic as Array<TrafficTarget>;
@@ -66,11 +66,19 @@ export class ServiceManifest {
     }
 
     traffic.push({
-      "revisionName": revision,
-      "tag": tag,
+      'revisionName': revision,
+      'tag': tag,
     });
 
     this._object.spec.traffic = traffic;
+  }
+
+  public updateRevisionName(revision: string): void {
+    if (!this._object?.spec?.template?.metadata) {
+      throw new Error('failed to get the .spec.template.metadata field.');
+    }
+
+    this._object.spec.template.metadata.name = revision;
   }
 }
 
