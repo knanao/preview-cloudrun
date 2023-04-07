@@ -14,14 +14,26 @@
 * limitations under the License.
 */
 
-import fs from 'fs';
+
+import { 
+  mkdtempSync,
+  readFileSync,
+  rmdirSync,
+  writeFileSync,
+  unlinkSync
+} from 'fs';
+import { dump } from 'js-yaml';
+
+import {
+  info,
+} from '@actions/core';
+import { getExecOutput } from '@actions/exec';
+import { getToolCommand } from '@google-github-actions/setup-cloud-sdk';
 
 import {
   ServiceManifest,
   parseServiceManifest,
 } from './cloudrun';
-import { getExecOutput } from '@actions/exec';
-import { getToolCommand } from '@google-github-actions/setup-cloud-sdk';
 
 export interface GcloudOptions {
   projectId?: string;
@@ -54,12 +66,15 @@ export class Gcloud {
   }
 
   public async updateCloudRunService(manifest: ServiceManifest): Promise<ServiceManifest> {
-    const file = 'temp/service.yaml'
+    const tempDir = mkdtempSync('temp');
+    const file = `${tempDir}/service.yaml`;
     const cmd = ['run', 'services', 'replace', file, '--quiet'];
     cmd.push('--format', 'yaml');
     if (this.projectId) cmd.push('--project', this.projectId);
 
-    fs.writeFileSync(file, manifest.object);
+    const data = dump(manifest.object);
+    writeFileSync(file, data, {flag: 'w'});
+    info(readFileSync(file, 'utf8'));
     try {
       const output = await getExecOutput(this.toolCommand, cmd);
       if (output.exitCode !== 0) {
@@ -73,7 +88,8 @@ export class Gcloud {
       stdout = stdout.slice(stdout.indexOf('apiVersion'));
       return parseServiceManifest(stdout);
     } finally {
-      fs.unlinkSync(file);
+      unlinkSync(file);
+      rmdirSync(tempDir);
     }
   }
 }

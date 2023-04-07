@@ -14,11 +14,9 @@
 * limitations under the License.
 */
 
-import {
-  Gcloud,
-  GcloudOptions,
-} from './gcloud';
+import { readFileSync } from 'fs';
 import path from 'path';
+
 import {
   getInput,
   addPath,
@@ -31,10 +29,9 @@ import {
   context,
 } from '@actions/github';
 import { PullRequestEvent } from '@octokit/webhooks-definitions/schema'
+import { graphql } from '@octokit/graphql';
+import { ReportedContentClassifiers } from "@octokit/graphql-schema";
 import * as toolCache from '@actions/tool-cache';
-import { 
-  readFileSync
-} from 'fs';
 import {
   errorMessage,
 } from '@google-github-actions/actions-utils';
@@ -44,6 +41,11 @@ import {
   installGcloudSDK,
   isInstalled,
 } from '@google-github-actions/setup-cloud-sdk';
+
+import {
+  Gcloud,
+  GcloudOptions,
+} from './gcloud';
 
 export async function run(): Promise<void> {
   try {
@@ -94,11 +96,17 @@ export async function run(): Promise<void> {
     manifest.updateRevisionName(revision);
 
     const updatedManifest = await gcloud.updateCloudRunService(manifest);
+    if (updatedManifest) {
+      info(`Successfuly update the Cloud Run service: ${service}`);
+    } else {
+      throw new Error(`failed to update the Cloud Run service: ${service}`);
+    }
+
     const traffics = updatedManifest.getTraffic();
-    if (traffics) throw new Error('failed to get the .status.traffic field');
+    if (!traffics) throw new Error('failed to get the .status.traffic field');
     let url = '';
     for (const u of traffics) {
-      if (u.revisionName == revision) {
+      if (u.revisionName === revision && u.url) {
         url = u.url;
         break;
       }
@@ -110,25 +118,36 @@ export async function run(): Promise<void> {
       project: project,
       service: service,
       region: region,
-      commitHash: event.pull_request.head.sha,
+      commitHash: event.pull_request.head.sha.substring(0, 7),
       url: url,
     });
 
     const octokit = getOctokit(token);
+    const client = graphql.defaults({
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
     const comments = await octokit.rest.issues.listComments({
       owner: event.repository.owner.login,
       repo: event.repository.name,
       issue_number: event.number,
     });
-    comments.data.forEach(comment => {
-      if (comment.body.startsWith('<!-- preview-cloudrun -->')) {
-        octokit.rest.issues.deleteComment({
-          owner: event.repository.owner.login,
-          repo: event.repository.name,
-          comment_id: comment.id,
-	});
-      }
-    });
+    for (const comment of comments.data) {
+      if (!comment.body.startsWith('<!-- preview-cloudrun -->')) continue;
+
+      const classifier: ReportedContentClassifiers = "OUTDATED";
+      const query = `
+        mutation {
+          minimizeComment(input: {subjectId: "${comment.node_id}", classifier: ${classifier}}) {
+            minimizedComment {
+              isMinimized
+            }
+          }
+        }
+      `; 
+      await client(query);
+    }
 
     await octokit.rest.issues.createComment({
       owner: event.repository.owner.login,
@@ -148,7 +167,7 @@ function generateRevisionName(svc: string, image: string): string {
   const event = context.payload as PullRequestEvent;
   let version = '';
   if (image.includes(':')) version = image.slice(image.indexOf(':') + 1).split('.').join('');
-  return svc + '-' + version + '-' + event.pull_request.head.sha;
+  return svc + '-' + version + '-' + event.pull_request.head.sha.substring(0, 7);
 }
 
 function generateTrafficTag(): string {
@@ -157,7 +176,7 @@ function generateTrafficTag(): string {
   if (!(payload?.pull_request)) {
     throw new Error('failed to parse GitHub Event payload.');
   }
-  return 'pr' + payload.pull_request.number
+  return 'pr-' + payload.pull_request.number
 }
 
 function generateCommentBody(
@@ -172,7 +191,7 @@ function generateCommentBody(
   let str = '';
 
   const cloudrunUrl = `https://console.cloud.google.com/run/detail/${args.region}/${args.service}/revisions?project=${args.project}`;
-  const successBadge = `<!-- preview-cloudrun -->[![CLOUDRUN](https://img.shields.io/static/v1?label=CloudRun&message=Revisions&color=success&style=flat)](${cloudrunUrl}) `;
+  const successBadge = `<!-- preview-cloudrun -->\n[![CLOUDRUN](https://img.shields.io/static/v1?label=CloudRun&message=Revisions&color=success&style=flat)](${cloudrunUrl}) `;
 
   const actionUrl = getActionsLogUrl();
   const actionBadge = `[![ACTIONS](https://img.shields.io/static/v1?label=CloudRun&message=Actions_Log&style=flat)](${actionUrl})`;
@@ -181,7 +200,7 @@ function generateCommentBody(
   const title = `Ran preview-cloudrun against head commit ${args.commitHash} of this pull request. preview-cloudrun generated a new temporary Cloud Run revision with 0% traffic.`;
   str = str.concat(title, '\n\n');
 
-  const body = `## service: ${args.service}, region: ${args.region}\nRevision URL: ${args.url}\n\nIf this service requires authentication, please refer to this.\n
+  const body = `## service: ${args.service}, region: ${args.region}\nRevision URL: ${args.url}\n\nIf this service requires authentication, please refer to this.
 \`\`\`
 curl -s GET \\
   ${args.url} \\
@@ -195,7 +214,7 @@ curl -s GET \\
 
 function getActionsLogUrl(): string {
   const serverUrl = process.env.GITHUB_SERVER_URL;
-  if (!serverUrl)	return '';
+  if (!serverUrl) return '';
 
   const repoUrl = process.env.GITHUB_REPOSITORY;
   if (!repoUrl) return '';

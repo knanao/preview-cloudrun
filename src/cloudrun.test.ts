@@ -146,6 +146,7 @@ status:
       {
 	'percent': 100,
 	'revisionName': 'helloworld-v001-aa3e4b2',
+	'tag': undefined,
       },
       {
 	'revisionName': 'helloworld-v001-bbhf45q',
@@ -159,9 +160,7 @@ status:
       {
         "percent": 100,
         "revisionName": "helloworld-v001-aa3e4b2",
-      },
-      {
-        "revisionName": "helloworld-v001-bbhf45q",
+	'tag': undefined,
       },
       {
         "revisionName": "helloworld-v001-kfdacf3",

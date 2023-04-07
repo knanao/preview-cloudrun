@@ -14,8 +14,8 @@
 * limitations under the License.
 */
 
-import { loadYaml } from '@kubernetes/client-node';
 import { errorMessage, presence } from '@google-github-actions/actions-utils';
+import { loadYaml } from '@kubernetes/client-node';
 
 export class ServiceManifest {
   private _object: any;
@@ -40,6 +40,10 @@ export class ServiceManifest {
     return this._object?.spec?.template?.spec?.containers ? this._object.spec.template.spec.containers[0].image : '';
   }
 
+  public getRevisionName(): string {
+    return this._object?.spec?.template?.metadata ? this._object?.spec?.template?.metadata.name : '';
+  }
+
   public getTraffic(): Array<TrafficTarget> {
     const res: Array<TrafficTarget> = [];
     if (!this._object?.status?.traffic) return res;
@@ -61,21 +65,36 @@ export class ServiceManifest {
     }
 
     const traffic: Array<TrafficTarget> = this._object.spec.traffic as Array<TrafficTarget>;
+    const next: Array<TrafficTarget> = [];
     for (let i = 0; i < traffic.length; i++) {
-      if (traffic[i].tag == tag) delete traffic[i].tag;
+      if (traffic[i].latestRevision && this.getRevisionName()) {
+        next.push({
+          percent: 100,
+          revisionName: this.getRevisionName(),
+        });
+        continue;
+      }
+
+      if (traffic[i].percent || (traffic[i].tag && traffic[i].tag !== tag)) {
+        next.push({
+          percent: traffic[i].percent,
+          tag: traffic[i].tag,
+          revisionName: traffic[i].revisionName,
+        });
+      }
     }
 
-    traffic.push({
+    next.push({
       'revisionName': revision,
       'tag': tag,
     });
 
-    this._object.spec.traffic = traffic;
+    this._object.spec.traffic = next;
   }
 
   public updateRevisionName(revision: string): void {
-    if (!this._object?.spec?.template?.metadata) {
-      throw new Error('failed to get the .spec.template.metadata field.');
+    if (!this.getRevisionName()) {
+      throw new Error('failed to get the revision name.');
     }
 
     this._object.spec.template.metadata.name = revision;
@@ -87,6 +106,7 @@ export interface TrafficTarget {
   percent?: number;
   tag?: string;
   url?: string;
+  latestRevision?: string;
 }
 
 export function parseServiceManifest(data: string): ServiceManifest {
