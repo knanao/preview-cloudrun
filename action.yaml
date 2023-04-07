@@ -1,0 +1,65 @@
+# Copyright 2023 knanao.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Deploy Previews to Cloud Run
+author: knanao
+description: |-
+  Use this action to deploy a revision to Cloud Run for preview.
+
+inputs:
+  project:
+    description: |-
+      The Google Cloud Project ID. If unset, this is inherited from the environment.
+    required: false
+
+  region:
+    description: |-
+      Region in which the resource can be found.
+    required: false
+    default: us-central1
+
+  service:
+    description: |-
+      Name of a Cloud Run service or fully qualified identifier for it.
+    required: true
+
+  revision:
+    description: |-
+      Name of a Cloud Run revision or fully qualified identifier for it. This is inherited from image from the image tag version.
+    required: false
+
+  image:
+    description: |-
+      Name of the container image to deploy (e.g. gcr.io/cloudrun/hello:latest).
+    required: true
+
+  tag:
+    description: |-
+      Name of a traffic tag to assign to the revision for previews (e.g. pr-123).
+    required: false
+
+  gcloud_version:
+    description: |-
+      Version of the Cloud SDK to install. If unspecified or set to "latest",
+      the latest available gcloud SDK version for the target platform will be
+      installed. Example: "290.0.1".
+    required: false
+
+branding:
+  icon: chevrons-right
+  color: blue
+
+runs:
+  using: node16
+  main: dist/index.js
