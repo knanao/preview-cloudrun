@@ -73,6 +73,7 @@ jobs:
         with:
           service: ${{ env.SERVICE }}
           image: ${{ env.REGISTRY }}:${{ steps.tag.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 # Inputs
@@ -86,3 +87,4 @@ jobs:
 | image                           | Fully-qualified name of the container image to deploy.                         |    yes   |                                                      |
 | tag                             | Traffic tag to assign to the newly-created revision.                           |    no    | pr-${PULL_REQUEST_NUMBER}                            |
 | gcloud_version                  | Version of the gcloud CLI to use.                                              |    no    | latest                                               |
+| token                           | Secret of GITHUB_TOKEN. This is used for creating a coments to PRs.            |    yes   |                                                      |

@@ -61,7 +61,7 @@ export class ServiceManifest {
 
   public updatePreviewTraffic(revision: string, tag: string): void {
     if (!this._object?.spec?.traffic) {
-      throw new Error('failed to get the .spec.traffic field.');
+      throw new Error('failed to get the .spec.traffic field');
     }
 
     const traffic: Array<TrafficTarget> = this._object.spec.traffic as Array<TrafficTarget>;
@@ -94,7 +94,7 @@ export class ServiceManifest {
 
   public removeTag(tag: string): void {
     if (!this._object?.spec?.traffic) {
-      throw new Error('failed to get the .spec.traffic field.');
+      throw new Error('failed to get the .spec.traffic field');
     }
 
     const traffic: Array<TrafficTarget> = this._object.spec.traffic as Array<TrafficTarget>;
@@ -109,7 +109,7 @@ export class ServiceManifest {
 
   public updateRevisionName(revision: string): void {
     if (!this.getRevisionName()) {
-      throw new Error('failed to get the revision name.');
+      throw new Error('failed to get the revision name');
     }
 
     this._object.spec.template.metadata.name = revision;
@@ -117,7 +117,7 @@ export class ServiceManifest {
 
   public updateImage(image: string): void {
     if (!this.getImage()) {
-      throw new Error('failed to get the image.');
+      throw new Error('failed to get the image');
     }
 
     this._object.spec.template.spec.containers[0].image = image;
@@ -136,7 +136,7 @@ export function parseServiceManifest(data: string): ServiceManifest {
   try {
     data = presence(data);
     if (!data || data === '{}' || data === '[]') {
-      throw new Error("the data must be set.");
+      throw new Error("the data must be set");
     }
     return new ServiceManifest(data);
   } catch(err) {

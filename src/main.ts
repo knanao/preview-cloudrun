@@ -56,12 +56,14 @@ export async function run(): Promise<void> {
     const revision = getInput('revision') || generateRevisionName(service, image);
     const tag = getInput('tag') || generateTrafficTag();
     const gcloudVersion = await computeGcloudVersion(getInput('gcloud_version'));
+    const token = getInput('token');
     
-    if (!service) throw new Error('service name must be set.');
-    if (!image) throw new Error('container image must be set.');
+    if (!service) throw new Error('service name must be set');
+    if (!image) throw new Error('container image must be set');
+    if (!token) throw new Error('github token muset be set');
 
     if (context.eventName !== 'pull_request') {
-      throw new Error(`event ${context.eventName} is not supported.`);
+      throw new Error(`event ${context.eventName} is not supported`);
     }
      
     if (!isInstalled(gcloudVersion)) {
@@ -74,7 +76,7 @@ export async function run(): Promise<void> {
     const credFile = process.env.GOOGLE_GHA_CREDS_PATH;
     if (credFile) {
       await authenticateGcloudSDK(credFile);
-      info('Successfully authenticated');
+      info('Successfully authenticated.');
     } else {
       warning('No authentication found, authenticate with `google-github-actions/auth`.');
     }
@@ -85,7 +87,7 @@ export async function run(): Promise<void> {
 
     const manifest = await gcloud.getCloudRunServiceManifest(service, region);
     if (manifest) {
-      info(`Successfuly get the Cloud Run service: ${service}`)
+      info(`Successfuly get the Cloud Run service: ${service}.`)
     } else {
       throw new Error(`failed to get the Cloud Run service: ${service}`);
     }
@@ -95,7 +97,7 @@ export async function run(): Promise<void> {
 
       const updatedManifest = await gcloud.updateCloudRunService(manifest);
       if (updatedManifest) {
-        info(`Successfuly cleanup the ${tag} from ${service}`)
+        info(`Successfuly cleanup the ${tag} from ${service}.`)
       } else {
         throw new Error(`failed to cleanup the the ${tag} from ${service}`);
       }
@@ -108,7 +110,7 @@ export async function run(): Promise<void> {
 
     const updatedManifest = await gcloud.updateCloudRunService(manifest);
     if (updatedManifest) {
-      info(`Successfuly update the Cloud Run service: ${service}`);
+      info(`Successfuly update the Cloud Run service: ${service}.`);
     } else {
       throw new Error(`failed to update the Cloud Run service: ${service}`);
     }
@@ -134,10 +136,10 @@ export async function run(): Promise<void> {
     });
 
 
-    const octokit = getOctokit(process.env.GITHUB_TOKEN);
+    const octokit = getOctokit(token);
     const client = graphql.defaults({
       headers: {
-        authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        authorization: `Bearer ${token}`,
       },
     });
     const comments = await octokit.rest.issues.listComments({
@@ -186,7 +188,7 @@ function generateTrafficTag(): string {
   const path = process.env.GITHUB_EVENT_PATH;
   const payload = JSON.parse(readFileSync(path).toString());
   if (!(payload?.pull_request)) {
-    throw new Error('failed to parse GitHub Event payload.');
+    throw new Error('failed to parse GitHub Event payload');
   }
   return 'pr-' + payload.pull_request.number
 }
