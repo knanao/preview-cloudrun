@@ -92,12 +92,35 @@ export class ServiceManifest {
     this._object.spec.traffic = next;
   }
 
+  public removeTag(tag: string): void {
+    if (!this._object?.spec?.traffic) {
+      throw new Error('failed to get the .spec.traffic field.');
+    }
+
+    const traffic: Array<TrafficTarget> = this._object.spec.traffic as Array<TrafficTarget>;
+    const next: Array<TrafficTarget> = [];
+    for (let i = 0; i < traffic.length; i++) {
+      if (traffic[i].tag === tag) continue;
+      next.push(traffic[i]);
+    }
+
+    this._object.spec.traffic = next;
+  }
+
   public updateRevisionName(revision: string): void {
     if (!this.getRevisionName()) {
       throw new Error('failed to get the revision name.');
     }
 
     this._object.spec.template.metadata.name = revision;
+  }
+
+  public updateImage(image: string): void {
+    if (!this.getImage()) {
+      throw new Error('failed to get the image.');
+    }
+
+    this._object.spec.template.spec.containers[0].image = image;
   }
 }
 

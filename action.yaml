@@ -49,18 +49,12 @@ inputs:
       Name of a traffic tag to assign to the revision for previews (e.g. pr-123).
     required: false
 
-  cleanup:
+  gcloud_version:
     description: |-
-      If true, the traffic tags related PRs that were already closed will be removed.
-      There is a limit for the revision tag.
-      https://cloud.google.com/run/quotas#cloud_run_limits
+      Version of the Cloud SDK to install. If unspecified or set to "latest",
+      the latest available gcloud SDK version for the target platform will be
+      installed. Example: "290.0.1".
     required: false
-    default: true
-
-  token:
-    description: |-
-      The GITHUB_TOKEN secret used to send comment on pull request.
-    required: true
 
 branding:
   icon: chevrons-right

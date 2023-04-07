@@ -3,3 +3,5 @@ node_modules
 
 # binaries
 dist
+
+.DS_Store

@@ -55,13 +55,10 @@ export async function run(): Promise<void> {
     const image = getInput('image');
     const revision = getInput('revision') || generateRevisionName(service, image);
     const tag = getInput('tag') || generateTrafficTag();
-    const cleanup = (getInput('cleanup') || 'true').toLowerCase() === 'true';
-    const token = getInput('token');
     const gcloudVersion = await computeGcloudVersion(getInput('gcloud_version'));
     
     if (!service) throw new Error('service name must be set.');
     if (!image) throw new Error('container image must be set.');
-    if (!token) throw new Error('github token muset be set.');
 
     if (context.eventName !== 'pull_request') {
       throw new Error(`event ${context.eventName} is not supported.`);
@@ -90,8 +87,22 @@ export async function run(): Promise<void> {
     if (manifest) {
       info(`Successfuly get the Cloud Run service: ${service}`)
     } else {
-      throw new Error(`failed to get the Cloud Run service: ${service}.`);
+      throw new Error(`failed to get the Cloud Run service: ${service}`);
     }
+
+    if (context.payload.action === 'closed') {
+      manifest.removeTag(tag);
+
+      const updatedManifest = await gcloud.updateCloudRunService(manifest);
+      if (updatedManifest) {
+        info(`Successfuly cleanup the ${tag} from ${service}`)
+      } else {
+        throw new Error(`failed to cleanup the the ${tag} from ${service}`);
+      }
+      return;
+    }
+
+    manifest.updateImage(image);
     manifest.updatePreviewTraffic(revision, tag);
     manifest.updateRevisionName(revision);
 
@@ -122,10 +133,11 @@ export async function run(): Promise<void> {
       url: url,
     });
 
-    const octokit = getOctokit(token);
+
+    const octokit = getOctokit(process.env.GITHUB_TOKEN);
     const client = graphql.defaults({
       headers: {
-        authorization: `Bearer ${token}`,
+        authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
       },
     });
     const comments = await octokit.rest.issues.listComments({
