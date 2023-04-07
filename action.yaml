@@ -56,6 +56,11 @@ inputs:
       installed. Example: "290.0.1".
     required: false
 
+  token:
+    description: |-
+      The GITHUB_TOKEN secret used to send comment on pull request.
+    required: true
+
 branding:
   icon: chevrons-right
   color: blue
