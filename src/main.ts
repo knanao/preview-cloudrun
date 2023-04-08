@@ -127,8 +127,10 @@ export async function run(): Promise<void> {
     if (!url) throw new Error(`failed to get the preview url from ${service} manifest`);
 
     const event = context.payload as PullRequestEvent;
+    let projectId = project;
+    if (!projectId) projectId = await gcloud.getProjectID();
     const body = generateCommentBody({
-      project: project,
+      project: projectId,
       service: service,
       region: region,
       commitHash: event.pull_request.head.sha.substring(0, 7),
