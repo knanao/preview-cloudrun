@@ -92,4 +92,16 @@ export class Gcloud {
       rmdirSync(tempDir);
     }
   }
+
+  public async getProjectID(): Promise<string> {
+    const cmd = ['config', 'get', 'project'];
+
+    const output = await getExecOutput(this.toolCommand, cmd);
+    if (output.exitCode !== 0) {
+      const errMsg = output.stderr || `command exited ${output.exitCode}, but stderr had no output`;
+      throw new Error(`failed to execute gcloud command \`${this.toolCommand} ${cmd.join(' ')}\`: ${errMsg}`);
+    }
+
+    return output.stdout;
+  }
 }
